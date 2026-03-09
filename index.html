@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>外賣分帳助手</title>
+  <style>
+    :root{
+      --bg:#f4efe7;
+      --paper:#fffdf8;
+      --paper-2:#fffaf2;
+      --ink:#2f2a24;
+      --muted:#7c746c;
+      --line:#dfd3c3;
+      --accent:#8b6f47;
+      --accent-2:#b89563;
+      --good:#56785c;
+      --danger:#a85c5c;
+      --dark:#4a4038;
+      --shadow:0 10px 24px rgba(80,60,30,.08);
+      --radius:22px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC","PingFang HK",sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      padding:0;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:var(--sans);
+    }
+
+    body{
+      padding:18px 12px 28px;
+    }
+
+    .app{
+      width:min(1380px,100%);
+      margin:0 auto;
+    }
+
+    .hero{
+      margin-bottom:14px;
+      padding:2px 2px 4px;
+    }
+
+    .title{
+      margin:0 0 4px;
+      font-size:clamp(24px,3.5vw,34px);
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+.main-grid{
+  display:grid;
+  grid-template-columns: .92fr 1.18fr;
+  gap:16px;
+  align-items:start;
+}
+
+    @media (max-width: 1180px){
+      .main-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .col{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-width:0;
+    }
+
+    .card{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2)),
+        var(--paper);
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:16px;
+      min-width:0;
+    }
+
+    .receipt{
+      position:relative;
+      overflow:hidden;
+    }
+
+    .receipt::after{
+      content:"";
+      position:absolute;
+      left:16px;
+      right:16px;
+      top:68px;
+      border-top:1px dashed #d8c8b3;
+      opacity:.9;
+    }
+
+    .section-head{
+      min-height:38px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:30px;
+      position:relative;
+      z-index:1;
+    }
+
+    .section-title{
+      margin:0;
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 11px;
+      border-radius:999px;
+      background:#f5ede2;
+      border:1px solid #e7d7c1;
+      color:#7d6140;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:12px;
+    }
+
+    .label{
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+    }
+
+    .input,.textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:var(--paper-2);
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:15px;
+      color:var(--ink);
+      outline:none;
+      transition:.15s ease;
+    }
+
+    .input:focus,.textarea:focus{
+      border-color:var(--accent-2);
+      box-shadow:0 0 0 4px rgba(184,149,99,.12);
+      background:#fffdf9;
+    }
+
+    .textarea{
+      min-height:156px;
+      resize:vertical;
+      font-family:var(--mono);
+      line-height:1.55;
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid transparent;
+      border-radius:14px;
+      min-height:40px;
+      padding:8px 13px;
+      font-size:13px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s ease;
+      box-shadow:none;
+    }
+
+    .btn:active{
+      transform:translateY(1px) scale(.99);
+    }
+
+    .btn.primary{
+      background:#94744a;
+      color:#fffdf8;
+      border-color:#8a6a40;
+    }
+
+    .btn.secondary{
+      background:#4a4038;
+      color:#fff;
+      border-color:#433931;
+    }
+
+    .btn.soft{
+      background:#f4ead9;
+      color:#735a3c;
+      border-color:#e3d2b8;
+    }
+
+    .btn.danger{
+      background:#fbf1ef;
+      color:var(--danger);
+      border-color:#ecd2cd;
+    }
+
+    .btn.save-name{
+      background:#eef6ef;
+      color:var(--good);
+      border-color:#d1e1d2;
+    }
+
+    .btn.small{
+      min-height:36px;
+      padding:7px 12px;
+      font-size:12px;
+      border-radius:12px;
+    }
+
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .divider{
+      margin:12px 0 8px;
+      border-top:1px dashed #d8c8b3;
+    }
+
+    .members{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .member{
+      background:var(--paper-2);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .member-top{
+      display:grid;
+      grid-template-columns: 1fr 220px;
+      gap:12px;
+      align-items:end;
+    }
+
+    @media (max-width: 760px){
+      .member-top{
+        grid-template-columns:1fr;
+      }
+    }
+
+    .member-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px dashed #d8c8b3;
+    }
+
+    .tiny-ok{
+      font-size:12px;
+      color:var(--good);
+      font-weight:800;
+    }
+
+    .saved-names{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .chip{
+      border:none;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      cursor:pointer;
+      font-weight:800;
+      color:#5f5347;
+    }
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .stat{
+      background:var(--paper-2);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      min-height:96px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .stat-label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+      margin-bottom:6px;
+    }
+
+    .stat-value{
+      font-size:30px;
+      line-height:1;
+      font-weight:900;
+      font-family:var(--mono);
+      letter-spacing:.01em;
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .item{
+      background:var(--paper-2);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      display:grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap:14px;
+      align-items:center;
+    }
+
+    .item-main{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .item-topline{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .item-name{
+      font-size:15px;
+      font-weight:900;
+      word-break:break-word;
+    }
+
+    .money{
+      font-size:22px;
+      line-height:1;
+      font-family:var(--mono);
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .item-meta{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .item-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    .copy-btn{
+      min-width:106px;
+    }
+
+    .footer-note{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:left;
+      line-height:1.6;
+    }
+
+    .mini-note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+      line-height:1.6;
+    }
+
+    .export-tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+.member-toolbar{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:14px;
+  margin-bottom:12px;
+}
+
+    .member-toolbar .btn{
+      min-width:auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="hero">
+      <h1 class="title">外賣分帳助手</h1>
+      <p class="subtitle">
+      </p>
+    </div>
+
+    <div class="main-grid">
+      <div class="col">
+        <section class="card receipt">
+          <div class="section-head">
+            <h2 class="section-title">基本資料</h2>
+
+          </div>
+
+          <div class="field">
+            <label class="label" for="finalTotal">最終支付總額</label>
+            <input id="finalTotal" class="input" type="number" min="0" step="0.01" placeholder="請輸入結帳價錢">
+          </div>
+
+          <div class="field">
+            <label class="label" for="paymentLink">你的收款連結（PayMe / FPS / 其他）</label>
+            <input id="paymentLink" class="input" type="text" placeholder="貼上你的 PayMe / FPS 收款連結">
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="hint">
+            計算公式：<br>
+            <strong>個人支付 = (個人原價 / 全單原價總和) × 最終支付總額</strong>
+          </div>
+        </section>
+
+
+
+
+
+
+        <section class="card receipt">
+          <div class="section-head">
+            <h2 class="section-title">總覽</h2>
+          </div>
+
+          <div class="summary">
+            <div class="stat">
+              <div class="stat-label">原價總和</div>
+              <div class="stat-value" id="rawTotalText">$0.00</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">最終支付</div>
+              <div class="stat-value" id="finalTotalText">$0.00</div>
+            </div>
+          </div>
+
+          <div class="hint">
+            如果最終支付細過原價總和，代表全單有折扣。<br>
+            如果最終支付大過原價總和，通常代表已包含運費、平台費或服務費。
+          </div>
+        </section>
+		
+		
+		
+		
+<section class="card receipt">
+  <div class="section-head results-head">
+    <h2 class="section-title">計算結果</h2>
+
+    <div class="results-head-actions">
+      <button id="copyAllExportBtn" class="btn primary small" type="button">一鍵輸出全部</button>
+    </div>
+  </div>
+
+  <div id="resultsList" class="list"></div>
+
+  <div class="footer-note">
+    已自動記住收款連結；常用名字只會在你按下「儲存名字」後才保留。
+  </div>
+</section>
+</div>
+
+<div class="col">
+  <section class="card receipt">
+    <div class="section-head">
+      <h2 class="section-title">成員名單</h2>
+      <div class="row" style="margin-top:10px;">
+        <button id="resetAllBtn" class="btn danger small" type="button">一鍵重置</button>
+      </div>
+    </div>
+
+    <div id="members" class="members"></div>
+
+    <div id="savedNamesWrap" style="display:none;">
+      <div class="divider"></div>
+      <div class="section-head" style="margin-top:8px;">
+        <div class="label">常用名字（點一下快速填入）</div>
+        <button id="clearSavedNamesBtn" class="btn danger small" type="button">清空常用名字</button>
+      </div>
+      <div id="savedNames" class="saved-names"></div>
+    </div>
+
+    <div class="member-toolbar">
+      <button id="addMemberBtn" class="btn primary small" type="button">＋ 新增成員</button>
+    </div>
+  </section>
+</div>
+
+
+
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      savedNames: "takeout_split_saved_names_v4",
+      paymentLink: "takeout_split_payment_link_v4",
+      session: "takeout_split_session_v4"
+    };
+
+    const finalTotalInput = document.getElementById("finalTotal");
+    const paymentLinkInput = document.getElementById("paymentLink");
+    const addMemberBtn = document.getElementById("addMemberBtn");
+    const clearSavedNamesBtn = document.getElementById("clearSavedNamesBtn");
+const copyAllExportBtn = document.getElementById("copyAllExportBtn");
+const resetAllBtn = document.getElementById("resetAllBtn");
+    const membersEl = document.getElementById("members");
+    const resultsListEl = document.getElementById("resultsList");
+    const rawTotalText = document.getElementById("rawTotalText");
+    const finalTotalText = document.getElementById("finalTotalText");
+    const savedNamesWrap = document.getElementById("savedNamesWrap");
+    const savedNamesEl = document.getElementById("savedNames");
+
+    let members = [];
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10);
+    }
+
+    function num(v) {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function round2(n) {
+      return Math.round((n + Number.EPSILON) * 100) / 100;
+    }
+
+    function fmtMoney(n) {
+      return `$${round2(n).toFixed(2)}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function getSavedNames() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.savedNames) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSavedNames(names) {
+      localStorage.setItem(STORAGE_KEYS.savedNames, JSON.stringify(names));
+    }
+
+    function shouldSaveName(name) {
+      const cleaned = String(name || "").trim();
+      if (!cleaned) return false;
+      if (cleaned.length < 2) return false;
+      if (/^\d+$/.test(cleaned)) return false;
+      return true;
+    }
+
+    function addNameToSaved(name) {
+      const cleaned = String(name || "").trim();
+      if (!shouldSaveName(cleaned)) return false;
+
+      let names = getSavedNames();
+      if (names.includes(cleaned)) return "exists";
+
+      names.push(cleaned);
+      names = names.slice(-30);
+      saveSavedNames(names);
+      renderSavedNames();
+      return true;
+    }
+
+    function clearSavedNames() {
+      localStorage.removeItem(STORAGE_KEYS.savedNames);
+      renderSavedNames();
+    }
+
+    function renderSavedNames() {
+      const names = getSavedNames();
+      savedNamesEl.innerHTML = "";
+
+      if (!names.length) {
+        savedNamesWrap.style.display = "none";
+        return;
+      }
+
+      savedNamesWrap.style.display = "block";
+
+      names.forEach(name => {
+        const btn = document.createElement("button");
+        btn.className = "chip";
+        btn.type = "button";
+        btn.textContent = name;
+        btn.addEventListener("click", () => {
+          addMember(name, "");
+        });
+        savedNamesEl.appendChild(btn);
+      });
+    }
+
+function resetCurrentSession() {
+  finalTotalInput.value = "";
+  paymentLinkInput.value = "";
+
+  members = [
+    { id: uid(), name: "", rawPrice: "" },
+    { id: uid(), name: "", rawPrice: "" }
+  ];
+
+  saveSession();
+  renderMembers();
+  renderAll();
+}
+
+    function saveSession() {
+  const payload = {
+    finalTotal: finalTotalInput.value,
+    paymentLink: paymentLinkInput.value,
+    members
+  };
+  localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(payload));
+  localStorage.setItem(STORAGE_KEYS.paymentLink, paymentLinkInput.value || "");
+}
+
+    function loadSession() {
+      const savedPaymentLink = localStorage.getItem(STORAGE_KEYS.paymentLink) || "";
+      paymentLinkInput.value = savedPaymentLink;
+
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null");
+        if (data) {
+          finalTotalInput.value = data.finalTotal || "";
+          paymentLinkInput.value = data.paymentLink || savedPaymentLink || "";
+function loadSession() {
+  const savedPaymentLink = localStorage.getItem(STORAGE_KEYS.paymentLink) || "";
+  paymentLinkInput.value = savedPaymentLink;
+
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || "null");
+    if (data) {
+      finalTotalInput.value = data.finalTotal || "";
+      paymentLinkInput.value = data.paymentLink || savedPaymentLink || "";
+      members = Array.isArray(data.members) ? data.members : [];
+    }
+  } catch {}
+
+  if (!members.length) {
+    members = [
+      { id: uid(), name: "", rawPrice: "" },
+      { id: uid(), name: "", rawPrice: "" }
+    ];
+  }
+
+  renderMembers();
+  renderAll();
+}
+          members = Array.isArray(data.members) ? data.members : [];
+        }
+      } catch {}
+
+      if (!members.length) {
+        members = [
+          { id: uid(), name: "", rawPrice: "" },
+          { id: uid(), name: "", rawPrice: "" }
+        ];
+      }
+
+      renderMembers();
+      renderAll();
+    }
+
+    function addMember(prefillName = "", prefillPrice = "") {
+      members.push({
+        id: uid(),
+        name: prefillName,
+        rawPrice: prefillPrice
+      });
+      renderMembers();
+      renderAll();
+    }
+
+    function removeMember(id) {
+      members = members.filter(m => m.id !== id);
+      if (!members.length) {
+        members = [{ id: uid(), name: "", rawPrice: "" }];
+      }
+      renderMembers();
+      renderAll();
+    }
+
+    function updateMember(id, key, value) {
+      members = members.map(m => m.id === id ? { ...m, [key]: value } : m);
+      renderResults();
+      saveSession();
+    }
+
+    function calculate() {
+      const finalTotal = num(finalTotalInput.value);
+      const rawTotal = round2(members.reduce((sum, m) => sum + num(m.rawPrice), 0));
+
+      const rows = members.map(m => {
+        const raw = num(m.rawPrice);
+        const ratio = rawTotal > 0 ? raw / rawTotal : 0;
+        const shouldPay = round2(ratio * finalTotal);
+        return {
+          ...m,
+          raw,
+          ratio,
+          shouldPay
+        };
+      });
+
+      const distributed = round2(rows.reduce((sum, r) => sum + r.shouldPay, 0));
+      const diff = round2(finalTotal - distributed);
+
+      if (Math.abs(diff) > 0 && rows.some(r => r.raw > 0)) {
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (rows[i].raw > 0) {
+            rows[i].shouldPay = round2(rows[i].shouldPay + diff);
+            break;
+          }
+        }
+      }
+
+      return { finalTotal, rawTotal, rows };
+    }
+
+    function buildCopyText(name, amount) {
+      const link = paymentLinkInput.value.trim();
+      const personName = name?.trim() || "你";
+      let text = `${personName}，今餐外賣你嗰份係 ${fmtMoney(amount)}`;
+      if (link) text += ` PayMe 撳呢度：${link}`;
+      return text;
+    }
+
+    function buildExportText() {
+      const { rows } = calculate();
+      return rows
+        .filter(row => row.name.trim() || row.raw > 0 || row.shouldPay > 0)
+        .map(row => `${row.name?.trim() || "未命名"} - ${fmtMoney(row.shouldPay)}`)
+        .join("\n");
+    }
+
+    async function copyToClipboard(text, btnEl, originalText = null) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btnEl) {
+          const old = originalText || btnEl.textContent;
+          btnEl.textContent = "已複製";
+          setTimeout(() => btnEl.textContent = old, 1400);
+        }
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        if (btnEl) {
+          const old = originalText || btnEl.textContent;
+          btnEl.textContent = "已複製";
+          setTimeout(() => btnEl.textContent = old, 1400);
+        }
+      }
+    }
+
+    function renderMembers() {
+      membersEl.innerHTML = "";
+
+      members.forEach((m, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "member";
+
+        wrap.innerHTML = `
+          <div class="member-top">
+            <div class="field">
+              <label class="label">成員名字 ${idx + 1}</label>
+              <input class="input" type="text" placeholder="請輸入名字" value="${escapeHtml(m.name)}" data-id="${m.id}" data-key="name">
+            </div>
+            <div class="field">
+              <label class="label">食物原價</label>
+              <input class="input" type="number" min="0" step="0.01" placeholder="請輸入食物原價（非折後）" value="${escapeHtml(m.rawPrice)}" data-id="${m.id}" data-key="rawPrice">
+            </div>
+          </div>
+
+          <div class="member-actions">
+            <button class="btn save-name small save-name-btn" type="button" data-id="${m.id}">儲存名字</button>
+            <button class="btn danger small remove-btn" type="button" data-id="${m.id}">刪除</button>
+            <span class="tiny-ok" id="save-name-status-${m.id}"></span>
+          </div>
+        `;
+
+        membersEl.appendChild(wrap);
+      });
+
+      membersEl.querySelectorAll("input[data-id]").forEach(input => {
+        input.addEventListener("input", e => {
+          const id = e.target.dataset.id;
+          const key = e.target.dataset.key;
+          updateMember(id, key, e.target.value);
+        });
+
+        input.addEventListener("blur", e => {
+          const id = e.target.dataset.id;
+          const key = e.target.dataset.key;
+          updateMember(id, key, e.target.value.trim());
+        });
+      });
+
+      membersEl.querySelectorAll(".remove-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          removeMember(btn.dataset.id);
+          saveSession();
+        });
+      });
+
+      membersEl.querySelectorAll(".save-name-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const member = members.find(m => m.id === id);
+          const statusEl = document.getElementById(`save-name-status-${id}`);
+          if (!member) return;
+
+          const result = addNameToSaved(member.name);
+
+          if (result === true) {
+            statusEl.textContent = "已加入常用名字";
+          } else if (result === "exists") {
+            statusEl.textContent = "名字已存在";
+          } else {
+            statusEl.textContent = "名字至少要 2 個字";
+          }
+
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = "";
+          }, 1600);
+
+          saveSession();
+        });
+      });
+    }
+
+    function renderResults() {
+      const { finalTotal, rawTotal, rows } = calculate();
+
+      rawTotalText.textContent = fmtMoney(rawTotal);
+      finalTotalText.textContent = fmtMoney(finalTotal);
+
+      resultsListEl.innerHTML = "";
+
+      rows.forEach(row => {
+        const item = document.createElement("div");
+        item.className = "item";
+
+        const text = buildCopyText(row.name, row.shouldPay);
+
+        item.innerHTML = `
+          <div class="item-main">
+            <div class="item-topline">
+              <div class="item-name">${escapeHtml(row.name || "阿你再不取名字啊")}</div>
+              <div class="money">${fmtMoney(row.shouldPay)}</div>
+            </div>
+            <div class="item-meta">
+              原價：${fmtMoney(row.raw)}<br>
+              佔比：${(row.ratio * 100).toFixed(1)}%
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="btn secondary small copy-btn" type="button">Copy 請求</button>
+          </div>
+        `;
+
+        const btn = item.querySelector(".copy-btn");
+        btn.addEventListener("click", () => copyToClipboard(text, btn, "Copy 請求"));
+
+        resultsListEl.appendChild(item);
+      });
+    }
+
+    function renderAll() {
+      renderResults();
+      renderSavedNames();
+      saveSession();
+    }
+
+    addMemberBtn.addEventListener("click", () => {
+      addMember();
+      saveSession();
+    });
+
+resetAllBtn.addEventListener("click", () => {
+  const ok = window.confirm("要重置今次資料嗎？常用名字會保留。");
+  if (!ok) return;
+  resetCurrentSession();
+});
+
+    clearSavedNamesBtn.addEventListener("click", () => {
+      clearSavedNames();
+    });
+
+copyAllExportBtn.addEventListener("click", () => {
+  const text = buildExportText();
+  copyToClipboard(text, copyAllExportBtn, "一鍵輸出全部");
+});
+    finalTotalInput.addEventListener("input", renderAll);
+    paymentLinkInput.addEventListener("input", renderAll);
+
+    loadSession();
+  </script>
+</body>
+</html>
